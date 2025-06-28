@@ -800,7 +800,7 @@ public class Principal extends javax.swing.JFrame {
     
     private void selecionarProdutoTabela(){
         tblListaProduto.addMouseListener(new MouseAdapter(){
-        public void mouseCliked(MouseEvent e){
+        public void mouseClicked(MouseEvent e){
             index = tblListaProduto.getSelectedRow();
             if(index >=0){
                 recuperaProduto(index);
@@ -906,6 +906,7 @@ public class Principal extends javax.swing.JFrame {
             index = -1;
         }else {
             JOptionPane.showMessageDialog(this, "Não foi selecionado produto para exclusão");
+            System.out.println(listaDeProduto);
         }
         
     }
