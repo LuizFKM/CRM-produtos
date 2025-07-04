@@ -4,6 +4,7 @@
  */
 package br.edu.compras02.view;
 
+import br.edu.compras02.controller.ProdutoController;
 import br.edu.compras02.model.Cliente;
 import br.edu.compras02.model.Produto;
 import br.edu.compras02.util.InicializarComponentes;
@@ -24,10 +25,14 @@ import javax.swing.table.DefaultTableModel;
 public class Principal extends javax.swing.JFrame {
 
     private final String NOME_CLIENTE = "Insira o nome";
+    private final String NOME_PRODUTO = "Insira o nome do produto";
+    private final String CODIGO_PRODUTO = "Insira o código do produto";
     private ArrayList<Cliente> listaDeClientes =  new ArrayList<>();
-    private ArrayList<Produto> listaDeProduto = new ArrayList<>();
+   
     private int index = -1;
     private boolean editar = false;
+    
+    private ProdutoController produtoController = new ProdutoController();
     
     public Principal() {
         initComponents();
@@ -553,6 +558,7 @@ public class Principal extends javax.swing.JFrame {
             editarCliente(index);
             atualizaTabela(tblListaDeClientes, listaDeClientes);
             index = -1;
+            editar = false;
         }
 
         
@@ -570,35 +576,35 @@ public class Principal extends javax.swing.JFrame {
     }//GEN-LAST:event_btnExcluirClienteActionPerformed
 
     private void btnSalvarProdutoActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btnSalvarProdutoActionPerformed
-        if(!editar){
-            // O Try vai executar o bloco de código
-            try{
-                Produto p = retornaProduto();
-                listaDeProduto.add(p);
-                atualizaTabelaDeProduto(tblListaProduto, listaDeProduto);
-                System.out.println(listaDeProduto.toString());
-                limparCamposProduto();
-            // o Catch vai pegar o erro
-            }catch(NumberFormatException ex){// a "Exception" vai retornar qualquer tipo de erro
-                JOptionPane.showMessageDialog(this, "Coloque um valor valido");
-            }catch(Exception ex){
-                System.out.println(ex);
-            }   
-        }else{
-            editarProduto(index);
-            atualizaTabelaDeProduto(tblListaProduto, listaDeProduto);
+        try {
+            Produto p = retornaProduto();
+
+            if (!editar) {
+                produtoController.adicionarProduto(p);
+            }else{
+                produtoController.editarProduto(index, p);
+            }
+
+            atualizaTabelaDeProduto(tblListaProduto, produtoController.getListaDeProdutos());
+            limparCamposProduto();
+            editar= false;
             index = -1;
+
+        } catch (Exception e) {
+            System.out.println(e);
         }
     }//GEN-LAST:event_btnSalvarProdutoActionPerformed
 
     private void btnLimparProdutoActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btnLimparProdutoActionPerformed
         limparCamposProduto();
-        editar = false;
-        index = -1;
     }//GEN-LAST:event_btnLimparProdutoActionPerformed
 
     private void btnExcluirProdutoActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btnExcluirProdutoActionPerformed
-        deletarProduto(index);
+        produtoController.excluirProduto(index);
+        atualizaTabelaDeProduto(tblListaProduto, produtoController.getListaDeProdutos());
+        limparCamposProduto();
+        editar = false;
+        index = -1;
     }//GEN-LAST:event_btnExcluirProdutoActionPerformed
 
     private void jTabbedPane1MouseClicked(java.awt.event.MouseEvent evt) {//GEN-FIRST:event_jTabbedPane1MouseClicked
@@ -685,6 +691,8 @@ public class Principal extends javax.swing.JFrame {
     private void configuraCampos(){
         InicializarComponentes ic = new InicializarComponentes();
         ic.configuraTextField(txtNomeCliente, NOME_CLIENTE);
+        ic.configuraTextField(txtNomeProduto, NOME_PRODUTO);
+        ic.configuraTextField(ftdCodProduto, CODIGO_PRODUTO);
     }
     
     private Cliente retornaCliente(){
@@ -753,21 +761,21 @@ public class Principal extends javax.swing.JFrame {
         }
     }
     
-    private void atualizaTabelaDeProduto(JTable tabela, ArrayList<Produto> listaDeProduto){
+    private void atualizaTabelaDeProduto(JTable tabela, ArrayList<Produto> listaDeProdutos){
         DefaultTableModel modeloTabela = (DefaultTableModel) tabela.getModel();
         
         modeloTabela.setNumRows(0);
         
-        for(Produto p : listaDeProduto){
-            Object[] linha = {p.getNomeProduto(), 
-                        p.getPrecoProduto(), 
-                        p.getQuantidadeProduto(), 
-                        p.getCodProduto()
+        for(Produto p : listaDeProdutos){
+            Object[] linha = {p.getNomeProduto(),
+                              p.getQuantidadeProduto(),
+                              p.getPrecoProduto(),
+                              p.getCodProduto()
                             };
-            modeloTabela.addRow(linha);
-            
+            modeloTabela.addRow(linha);  
         }
     }
+    
     private void limparCampos(){
         txtNomeCliente.setText(""); //Limpa o campo nome completo
         txtNomeCliente.requestFocus(); //O campo nome ganha foco
@@ -812,7 +820,7 @@ public class Principal extends javax.swing.JFrame {
     }
     
     private void recuperaProduto(int index){
-        Produto p = listaDeProduto.get(index);
+        Produto p = produtoController.getProduto(index);
         
         txtNomeProduto.setText(p.getNomeProduto());
         ftdPrecoProduto.setText(String.valueOf((p.getPrecoProduto())));
@@ -869,21 +877,7 @@ public class Principal extends javax.swing.JFrame {
        
     }
     
-    private void editarProduto(int index){
-        Produto p = listaDeProduto.get(index);
-        
-        String nomeProduto = txtNomeProduto.getText();
-        double precoProduto = Double.valueOf(ftdPrecoProduto.getText());
-        int codProduto = Integer.valueOf(ftdCodProduto.getText());
-        int quantidadeProduto = Integer.valueOf(ftdQtdProduto.getText());
-        
-
-        p.setCodProduto(codProduto);
-        p.setNomeProduto(nomeProduto);
-        p.setPrecoProduto(precoProduto);
-        p.setQuantidadeProduto(quantidadeProduto);
-        
-    }
+ 
 
     private void deletarCliente(int i) {
         if(i > -1){
@@ -897,18 +891,6 @@ public class Principal extends javax.swing.JFrame {
         }
     }
     
-    private void deletarProduto(int i){
-        if(i > -1){
-            listaDeProduto.remove(i);
-            atualizaTabelaDeProduto(tblListaProduto, listaDeProduto);
-            limparCamposProduto();
-            editar = false;
-            index = -1;
-        }else {
-            JOptionPane.showMessageDialog(this, "Não foi selecionado produto para exclusão");
-            System.out.println(listaDeProduto);
-        }
-        
-    }
+   
     
 }
